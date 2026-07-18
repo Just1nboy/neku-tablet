@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://accounts.google.com; connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self'"
+  />
+  <meta name="theme-color" content="#161513" />
+  <title>Neku — send sprite</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <header class="bar">
+    <div>
+      <div class="mark">NEKU</div>
+      <div class="route">tablet &rarr; laptop</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="btn-settings" aria-label="Settings">&#9881;</button>
+  </header>
+
+  <main>
+    <!-- first-run: needs the OAuth client id -->
+    <section class="view" id="view-setup">
+      <div class="panel">
+        <h2>One-time setup</h2>
+        <p class="lede">
+          This deployment wasn&rsquo;t pre-configured — normally whoever hosts the app
+          fills <code>config.js</code> so this screen never appears. To set it up manually,
+          paste the <strong>Web application</strong> OAuth Client ID from the Google Cloud
+          project (see <code>SETUP.md</code>, it ends in
+          <code>.apps.googleusercontent.com</code>).
+        </p>
+        <div class="field">
+          <label for="in-client-id">OAuth client id</label>
+          <input id="in-client-id" autocomplete="off" spellcheck="false"
+                 placeholder="1234567890-xxxx.apps.googleusercontent.com" />
+        </div>
+        <div class="field">
+          <label for="in-staging">Staging folder name</label>
+          <input id="in-staging" autocomplete="off" spellcheck="false" value="Sprite Staging" />
+          <div class="note">Must match the laptop app's staging folder name exactly.</div>
+        </div>
+        <button class="btn primary big" id="btn-save-setup">Save &amp; start</button>
+      </div>
+    </section>
+
+    <!-- main: pick, preview, send -->
+    <section class="view" id="view-main">
+      <div class="drawer-label">Light table</div>
+
+      <div class="table" id="table">
+        <div class="empty-hint" id="table-empty">
+          <div>Nothing on the table</div>
+          <div class="hint-sub">
+            Pick the sprite you just drew &mdash; you&rsquo;ll see it here before anything is
+            sent.
+          </div>
+        </div>
+        <img class="sprite" id="preview-img" alt="Sprite preview" hidden />
+        <div class="filecard" id="filecard" hidden>
+          <span class="fname" id="file-name"></span>
+          <span class="fsize" id="file-size"></span>
+        </div>
+      </div>
+
+      <div class="btn-row" id="pick-row">
+        <button class="btn big" id="btn-pick">Choose sprite</button>
+      </div>
+      <button class="btn primary big" id="btn-send" hidden>Send to laptop</button>
+      <p class="first-hint" id="first-hint" hidden>
+        First send opens a Google sign-in. If it warns about an &ldquo;unverified
+        app&rdquo;, tap <strong>Advanced &rarr; Continue</strong> — that&rsquo;s normal for
+        a private app.
+      </p>
+      <button class="btn ghost" id="btn-clear" hidden>Different file</button>
+      <input type="file" id="file-input" accept="image/*" />
+    </section>
+
+    <!-- sending -->
+    <section class="view" id="view-busy">
+      <div class="status">
+        <div class="spin"></div>
+        <div class="big-line">Sending&hellip;</div>
+        <div class="fname" id="busy-name"></div>
+        <div class="sub-line">Pushing to the staging folder in Drive.</div>
+      </div>
+    </section>
+
+    <!-- sent -->
+    <section class="view" id="view-done">
+      <div class="status">
+        <div class="stamp-ring">&#10003;</div>
+        <div class="big-line">On the laptop side</div>
+        <div class="fname" id="done-name"></div>
+        <div class="sub-line">The laptop app will pick it up from staging.</div>
+        <button class="btn primary big" id="btn-again" style="min-width: 240px">
+          Send another
+        </button>
+      </div>
+    </section>
+
+    <!-- failed -->
+    <section class="view" id="view-error">
+      <div class="status">
+        <div class="alarm-ring">!</div>
+        <div class="big-line">That didn&rsquo;t go through</div>
+        <div class="errbox" id="error-text"></div>
+        <div class="btn-row" style="width: 100%; max-width: 360px">
+          <button class="btn primary" id="btn-retry">Try again</button>
+          <button class="btn" id="btn-error-back">Start over</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- settings sheet -->
+  <dialog id="dlg-settings">
+    <div class="panel">
+      <h2>Settings</h2>
+      <div class="field">
+        <label for="set-client-id">OAuth client id</label>
+        <input id="set-client-id" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field">
+        <label for="set-staging">Staging folder name</label>
+        <input id="set-staging" autocomplete="off" spellcheck="false" />
+        <div class="note">Must match the laptop app's staging folder name exactly.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-save-settings">Save</button>
+        <button class="btn" id="btn-close-settings">Cancel</button>
+      </div>
+      <div class="danger-line">
+        Signed in with Google on this device?
+        <button id="btn-signout">Disconnect</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

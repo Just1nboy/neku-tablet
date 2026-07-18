@@ -103,6 +103,13 @@ function wireEvents() {
     $('dlg-settings').close();
     if (cfgClientId()) show('main');
   });
+  $('btn-install').addEventListener('click', () => {
+    if (!installPrompt) return;
+    installPrompt.prompt(); // Chrome takes over from here
+    installPrompt = null; // a prompt event is single-use
+    $('btn-install').hidden = true;
+  });
+
   $('btn-signout').addEventListener('click', () => {
     const tok = state.token && state.token.access_token;
     if (tok && window.google) {
@@ -325,6 +332,24 @@ async function doSend(token) {
   const folderId = await ensureStagingFolder(token);
   await uploadToStaging(token, folderId, state.file);
 }
+
+/* ---------- install button (real "add as app" without menu-hunting) ---------- */
+
+/* Chrome fires beforeinstallprompt only when the page qualifies as an installable
+   app AND isn't installed yet — so the button self-hides everywhere it makes no
+   sense (installed app, iPad, plain browsers, the Electron check harness). */
+let installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); // suppress Chrome's own mini-infobar; our button triggers it
+  installPrompt = e;
+  $('btn-install').hidden = false;
+});
+
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  $('btn-install').hidden = true;
+});
 
 /* ---------- Web Share Target (share straight from the drawing app) ---------- */
 

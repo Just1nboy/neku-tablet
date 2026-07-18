@@ -133,6 +133,7 @@ function setFile(f) {
   $('file-size').textContent = fmtSize(f.size);
   $('filecard').hidden = false;
   $('table-empty').hidden = true;
+  $('table').classList.add('checker');
   $('btn-send').hidden = false;
   $('btn-clear').hidden = false;
   $('pick-row').hidden = true;
@@ -147,6 +148,7 @@ function clearFile() {
   $('preview-img').removeAttribute('src');
   $('filecard').hidden = true;
   $('table-empty').hidden = false;
+  $('table').classList.remove('checker');
   $('btn-send').hidden = true;
   $('btn-clear').hidden = true;
   $('pick-row').hidden = false;

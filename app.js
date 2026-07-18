@@ -1,4 +1,4 @@
-/* Neku tablet — pick a sprite, preview it, push it to the Drive staging folder. */
+/* Neku tablet: pick a sprite, preview it, push it to the Drive staging folder. */
 'use strict';
 
 const SCOPE = 'https://www.googleapis.com/auth/drive.file';
@@ -336,7 +336,7 @@ async function doSend(token) {
 /* ---------- install button (real "add as app" without menu-hunting) ---------- */
 
 /* Chrome fires beforeinstallprompt only when the page qualifies as an installable
-   app AND isn't installed yet — so the button self-hides everywhere it makes no
+   app AND isn't installed yet, so the button self-hides everywhere it makes no
    sense (installed app, iPad, plain browsers, the Electron check harness). */
 let installPrompt = null;
 

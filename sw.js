@@ -1,6 +1,6 @@
 /* Neku tablet service worker.
    Exists for two reasons: PWA installability, and receiving files shared
-   straight from the drawing app (Web Share Target). No offline caching —
+   straight from the drawing app (Web Share Target). No offline caching;
    the app is useless without a network connection anyway. */
 'use strict';
 
@@ -35,7 +35,7 @@ async function handleShare(request) {
       );
     }
   } catch (_) {
-    // fall through — the app will just open without a preloaded file
+    // fall through; the app will just open without a preloaded file
   }
   // absolute against the SW scope so subpath hosting (e.g. GitHub Pages) works
   return Response.redirect(new URL('./?share-target=1', self.registration.scope).href, 303);

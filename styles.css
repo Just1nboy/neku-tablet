@@ -311,6 +311,34 @@ main {
 .status .sub-line { color: var(--ink-dim); font-size: 14px; max-width: 40ch; }
 .status .fname { font-family: var(--font-mono); font-size: 13px; color: var(--ink-dim); }
 
+/* the laptop's receipt: it went from "sent" to actually being on his desk */
+.landed {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  color: var(--ink-dim);
+  border: 1px solid var(--edge-soft);
+  border-radius: var(--r-s);
+}
+
+.landed-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink-ghost);
+  animation: landed-pulse 1.6s ease-in-out infinite;
+}
+
+.landed-dot.on { background: var(--accent); animation: none; }
+
+@keyframes landed-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 .stamp-ring {
   width: 84px;
   height: 84px;

@@ -13,6 +13,13 @@ const LS = {
   sentOnce: 'neku.sentOnce',
 };
 
+/* The laptop stamps this on a staged file the moment it appears on the light
+   table (markStagedSeen in laptop/src/main/drive.js). Drive is the only thing
+   both surfaces can see, so the stamp is the whole handshake. */
+const SEEN_KEY = 'nekuSeen';
+const LANDED_POLL_MS = 3000;
+const LANDED_GIVE_UP_MS = 150000; // the laptop polls staging every 15s
+
 /* Config priority: what was typed in-app (localStorage) beats what the deployer
    baked into config.js, which beats defaults. A baked build never asks setup questions. */
 const BAKED = window.NEKU_CONFIG || {};
@@ -28,6 +35,7 @@ const state = {
   token: null, // { access_token, expires_at }
   tokenClient: null,
   sending: false,
+  landedTimer: null,
 };
 
 /* ---------- views ---------- */
@@ -78,6 +86,7 @@ function wireEvents() {
     show('main');
   });
   $('btn-again').addEventListener('click', () => {
+    stopLandedWatch();
     clearFile();
     show('main');
   });
@@ -302,19 +311,21 @@ async function uploadToStaging(token, folderId, file) {
 async function send() {
   if (!state.file || state.sending) return;
   state.sending = true;
+  stopLandedWatch();
   $('busy-name').textContent = state.file.name;
   show('busy');
   try {
     let token = await getToken();
+    let uploaded;
     try {
-      await doSend(token);
+      uploaded = await doSend(token);
     } catch (err) {
       // one silent re-auth + retry on an expired/revoked token
       if (err.status === 401) {
         state.token = null;
         sessionStorage.removeItem('neku.token');
         token = await getToken();
-        await doSend(token);
+        uploaded = await doSend(token);
       } else {
         throw err;
       }
@@ -322,6 +333,7 @@ async function send() {
     localStorage.setItem(LS.sentOnce, '1');
     $('done-name').textContent = state.file.name;
     show('done');
+    startLandedWatch(uploaded && uploaded.id);
   } catch (err) {
     $('error-text').textContent = err.message || String(err);
     show('error');
@@ -332,7 +344,77 @@ async function send() {
 
 async function doSend(token) {
   const folderId = await ensureStagingFolder(token);
-  await uploadToStaging(token, folderId, state.file);
+  return uploadToStaging(token, folderId, state.file);
+}
+
+/* ---------- did the laptop actually get it? ----------
+
+   Without this the screen just says "sent" and he has no way of knowing whether
+   the laptop ever picked it up, which is exactly what makes him send a second
+   time and end up with two sprites on the light table. The tablet uploaded the
+   file, so it can read that file's appProperties back, and the laptop's stamp
+   turns up there within a poll or two. */
+
+/** A token we already hold. Never trigger sign-in from a background poll: the
+    popup would be blocked anyway, having had no tap behind it. */
+function cachedToken() {
+  if (state.token && state.token.expires_at - 60_000 > Date.now()) {
+    return state.token.access_token;
+  }
+  return null;
+}
+
+function setLanded(landed) {
+  $('landed-strip').hidden = false;
+  $('landed-dot').classList.toggle('on', landed);
+  $('landed-text').textContent = landed
+    ? 'The laptop has it'
+    : 'Waiting for the laptop…';
+  if (landed) {
+    $('done-title').textContent = 'Landed on the laptop';
+    $('done-sub').hidden = true;
+  }
+}
+
+function stopLandedWatch() {
+  clearInterval(state.landedTimer);
+  state.landedTimer = null;
+  $('landed-strip').hidden = true;
+  $('landed-dot').classList.remove('on');
+  $('done-title').textContent = 'On the laptop side';
+  $('done-sub').hidden = false;
+}
+
+function startLandedWatch(fileId) {
+  stopLandedWatch();
+  if (!fileId) return;
+  setLanded(false);
+  const started = Date.now();
+  state.landedTimer = setInterval(async () => {
+    if (Date.now() - started > LANDED_GIVE_UP_MS) {
+      // no news is not bad news: the file is in staging either way, the laptop
+      // just isn't open yet. Leave the last state on screen and stop asking.
+      clearInterval(state.landedTimer);
+      state.landedTimer = null;
+      return;
+    }
+    const token = cachedToken();
+    if (!token) {
+      clearInterval(state.landedTimer);
+      state.landedTimer = null;
+      return;
+    }
+    try {
+      const meta = await driveFetch(token, `${API}/files/${fileId}?fields=appProperties`);
+      if (meta.appProperties && meta.appProperties[SEEN_KEY]) {
+        clearInterval(state.landedTimer);
+        state.landedTimer = null;
+        setLanded(true);
+      }
+    } catch (_) {
+      /* a flaky poll is not worth showing; the next one will do */
+    }
+  }, LANDED_POLL_MS);
 }
 
 /* ---------- install button (real "add as app" without menu-hunting) ---------- */

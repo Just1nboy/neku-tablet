@@ -98,9 +98,14 @@
     <section class="view" id="view-done">
       <div class="status">
         <div class="stamp-ring">&#10003;</div>
-        <div class="big-line">On the laptop side</div>
+        <div class="big-line" id="done-title">On the laptop side</div>
         <div class="fname" id="done-name"></div>
-        <div class="sub-line">The laptop app will pick it up from staging.</div>
+        <div class="sub-line" id="done-sub">The laptop app will pick it up from staging.</div>
+        <!-- knowing the laptop actually has it is what stops him sending twice -->
+        <div class="landed" id="landed-strip" hidden>
+          <span class="landed-dot" id="landed-dot"></span>
+          <span id="landed-text">Waiting for the laptop&hellip;</span>
+        </div>
         <button class="btn primary big" id="btn-again" style="min-width: 240px">
           Send another
         </button>

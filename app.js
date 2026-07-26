@@ -27,6 +27,13 @@ const cfgClientId = () => localStorage.getItem(LS.clientId) || BAKED.clientId ||
 const cfgStaging = () =>
   localStorage.getItem(LS.staging) || BAKED.stagingFolder || 'Sprite Staging';
 
+/* Demo mode (add ?demo to the URL): the whole UI with no Google sign-in and no
+   upload, so the tablet can be hosted publicly as a portfolio piece. Pick any
+   image, watch it "send" and get picked up by an imaginary laptop. It is off by
+   default, so a real, configured install is completely untouched by it. */
+const DEMO = new URLSearchParams(location.search).has('demo');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const $ = (id) => document.getElementById(id);
 
 const state = {
@@ -48,12 +55,25 @@ function show(view) {
 function boot() {
   registerServiceWorker();
   wireEvents();
+  if (DEMO) {
+    showDemoBanner();
+    show('main');
+    return;
+  }
   if (!cfgClientId()) {
     show('setup');
   } else {
     show('main');
     checkForSharedSprite();
   }
+}
+
+/* A quiet strip so a visitor knows nothing is really being uploaded. */
+function showDemoBanner() {
+  const bar = document.createElement('div');
+  bar.className = 'demo-banner';
+  bar.textContent = 'Demo — pick any image. Nothing is uploaded and no sign-in is needed.';
+  document.body.prepend(bar);
 }
 
 /* ---------- events ---------- */
@@ -310,6 +330,7 @@ async function uploadToStaging(token, folderId, file) {
 
 async function send() {
   if (!state.file || state.sending) return;
+  if (DEMO) return demoSend();
   state.sending = true;
   stopLandedWatch();
   $('busy-name').textContent = state.file.name;
@@ -345,6 +366,23 @@ async function send() {
 async function doSend(token) {
   const folderId = await ensureStagingFolder(token);
   return uploadToStaging(token, folderId, state.file);
+}
+
+/* The same three screens a real send walks through (busy -> done -> "the laptop
+   has it"), on timers instead of Drive. Never touches Google or the network. */
+async function demoSend() {
+  state.sending = true;
+  stopLandedWatch();
+  $('busy-name').textContent = state.file.name;
+  show('busy');
+  await sleep(1100);
+  localStorage.setItem(LS.sentOnce, '1');
+  $('done-name').textContent = state.file.name;
+  show('done');
+  setLanded(false);
+  await sleep(1700);
+  setLanded(true);
+  state.sending = false;
 }
 
 /* ---------- did the laptop actually get it? ----------

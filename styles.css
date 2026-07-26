@@ -408,3 +408,15 @@ dialog .panel { background: none; border: none; }
 }
 
 input[type='file'] { display: none; }
+
+/* Demo-mode strip (?demo). Present only when app.js prepends it, so a real
+   install never renders it. */
+.demo-banner {
+  padding: 8px 14px;
+  background: var(--accent-tint);
+  border-bottom: 1px solid var(--accent);
+  color: var(--accent-text);
+  font: 12px/1.4 var(--font-mono);
+  letter-spacing: 0.02em;
+  text-align: center;
+}

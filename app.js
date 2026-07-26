@@ -72,7 +72,7 @@ function boot() {
 function showDemoBanner() {
   const bar = document.createElement('div');
   bar.className = 'demo-banner';
-  bar.textContent = 'Demo — pick any image. Nothing is uploaded and no sign-in is needed.';
+  bar.textContent = 'Demo. Pick any image. Nothing is uploaded and no sign-in is needed.';
   document.body.prepend(bar);
 }
 
